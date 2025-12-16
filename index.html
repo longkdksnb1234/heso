@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kho Lưu Trữ Ký Ức</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #d4af37;
+            --bg-grad: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            --glass: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a2e);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #fff;
+            /* Thay đổi: Dùng min-height và cho phép cuộn nếu cần thiết */
+            min-height: 100vh;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            /* Thay đổi: Không căn giữa dọc (center) nữa mà căn từ trên xuống (flex-start) */
+            justify-content: flex-start; 
+            padding-top: 15vh; /* Đẩy nội dung xuống 15% màn hình -> Nằm ở phần trên an toàn */
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- SAO BĂNG --- */
+        .night {
+            position: fixed; width: 100%; height: 100%; top: 0; left: 0;
+            transform: rotateZ(45deg); z-index: 0; pointer-events: none;
+        }
+
+        .shooting_star {
+            position: absolute; left: 50%; top: 50%; height: 2px;
+            background: linear-gradient(-45deg, #5f91ff, rgba(0, 0, 255, 0));
+            border-radius: 999px; filter: drop-shadow(0 0 6px #699bff);
+            animation: tail 3000ms ease-in-out infinite, shooting 3000ms ease-in-out infinite;
+        }
+        .shooting_star::before, .shooting_star::after {
+            content: ''; position: absolute; top: calc(50% - 1px); right: 0;
+            height: 2px; background: linear-gradient(-45deg, rgba(0, 0, 255, 0), #5f91ff, rgba(0, 0, 255, 0));
+            transform: translateX(50%) rotateZ(45deg); border-radius: 100%;
+            animation: shining 3000ms ease-in-out infinite;
+        }
+        @keyframes tail { 0% { width: 0; } 30% { width: 100px; } 100% { width: 0; } }
+        @keyframes shooting { 0% { transform: translateX(0); } 100% { transform: translateX(300px); } }
+        @keyframes shining { 0% { width: 0; } 50% { width: 30px; } 100% { width: 0; } }
+
+        .shooting_star:nth-child(1) { top: 0; left: 0; animation-delay: 0ms; }
+        .shooting_star:nth-child(2) { top: 0; left: 20%; animation-delay: 2000ms; }
+        .shooting_star:nth-child(3) { top: 0; left: 40%; animation-delay: 4000ms; }
+        .shooting_star:nth-child(4) { top: 0; left: 60%; animation-delay: 6000ms; }
+        .shooting_star:nth-child(5) { top: 0; left: 80%; animation-delay: 8000ms; }
+        .shooting_star:nth-child(6) { top: 50px; left: 10%; animation-delay: 1500ms; }
+        .shooting_star:nth-child(7) { top: -50px; left: 90%; animation-delay: 3500ms; }
+
+        /* Loading */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f0c29; z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.8s ease;
+        }
+        .loader-text {
+            font-family: 'Dancing Script', cursive; font-size: 4rem; color: var(--primary);
+            text-shadow: 0 0 20px var(--primary);
+        }
+
+        /* Giao diện chính */
+        .main-interface {
+            width: 100%; max-width: 500px; 
+            /* Bỏ height 100% để nó gọn gàng theo nội dung */
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px; z-index: 1; position: relative;
+            /* Thêm transition để nếu cần chỉnh vị trí thì mượt hơn */
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            font-family: 'Dancing Script', cursive; font-size: 2.8rem; color: var(--primary);
+            margin-bottom: 30px; text-shadow: 0 0 10px rgba(212, 175, 55, 0.3); text-align: center;
+        }
+
+        .search-box { position: relative; width: 85%; }
+
+        input {
+            width: 100%; padding: 15px 20px;
+            border-radius: 30px; border: 1px solid var(--border);
+            background: var(--glass); color: #fff;
+            font-size: 1.2rem; text-align: center; outline: none;
+            backdrop-filter: blur(10px); transition: 0.3s;
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
+
+        .btn-search {
+            margin-top: 25px; padding: 12px 40px;
+            background: var(--primary); color: #000;
+            border: none; border-radius: 25px; font-weight: 600; cursor: pointer;
+            font-size: 1rem; box-shadow: 0 0 10px var(--primary);
+            transition: transform 0.2s;
+            /* Đảm bảo nút to dễ bấm */
+            min-width: 150px; 
+        }
+        .btn-search:active { transform: scale(0.95); }
+
+        /* Popup Kết Quả */
+        .result-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: all 0.5s ease;
+            padding: 20px;
+            /* Fix cho mobile: đảm bảo popup luôn nằm trên cùng */
+            touch-action: none;
+        }
+        .result-modal.active { opacity: 1; pointer-events: all; }
+
+        .content-card {
+            width: 100%; max-width: 400px;
+            background: rgba(30, 30, 50, 0.6); 
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2); 
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transform: scale(0.8); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .result-modal.active .content-card { transform: scale(1); }
+
+       /* --- KHUNG MEDIA THÔNG MINH --- */
+        .media-box {
+            width: 100%; height: 450px; position: relative; overflow: hidden;
+            cursor: pointer; background-color: #000; 
+            background-position: center; background-repeat: no-repeat; background-size: cover;
+        }
+
+        .media-box::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); 
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 1;
+        }
+
+        .media-box img, .media-box video {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 100%; height: 100%; object-fit: contain;
+            transition: opacity 0.5s ease; box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .media-box video { opacity: 0; z-index: 2; }
+        .media-box img { opacity: 1; z-index: 3; }
+        
+        .media-box.playing video { opacity: 1; z-index: 4; }
+        .media-box.playing img { opacity: 0; z-index: 1; }
+
+        .info-box { padding: 20px; text-align: center; }
+        .info-box h3 { color: var(--primary); margin-bottom: 5px; font-family: 'Dancing Script', cursive; font-size: 1.8rem; }
+        .info-box p { font-size: 0.9rem; color: #eee; font-style: italic; transition: opacity 0.3s; }
+
+        .close-btn {
+            margin-top: 20px; width: 50px; height: 50px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.5); 
+            background: rgba(0,0,0,0.3); color: #fff; font-size: 1.2rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: 0.3s;
+        }
+        .close-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+    </style>
+</head>
+<body>
+    <div class="night">
+        <div class="shooting_star"></div>
+        <div class="shooting_star"></div>
+        <div class="shooting_star"></div>
+        <div class="shooting_star"></div>
+        <div class="shooting_star"></div>
+        <div class="shooting_star"></div>
+        <div class="shooting_star"></div>
+    </div>
+
+    <div id="loader"><div class="loader-text" id="progress">0%</div></div>
+
+    <div class="main-interface">
+        <h1>Mật Mã Ký Ức</h1>
+        <div class="search-box">
+            <input type="text" id="secretCode" placeholder="Nhập từ khóa..." autocomplete="off">
+        </div>
+        <button class="btn-search" onclick="checkMemory()">Truy Cập</button>
+        <div style="margin-top: 20px; opacity: 0.7; font-size: 0.8rem; text-shadow: 0 0 5px rgba(0,0,0,0.5);">
+            Gợi ý: Nhập "demo" hoặc "love"
+        </div>
+    </div>
+
+    <div class="result-modal" id="resultModal">
+        <div class="content-card">
+            <div class="media-box" id="mediaContainer" onclick="revealVideo()">
+                </div>
+            <div class="info-box">
+                <h3 id="memoryTitle">...</h3>
+                <p id="memoryDesc">...</p>
+            </div>
+        </div>
+        <button class="close-btn" onclick="closeMemory()"><i class="fas fa-times"></i></button>
+    </div>
+
+    <script>
+        // --- DATA KÝ ỨC ---
+        const dataMemories = {
+            "demo": {
+                img: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1000",
+                video: "https://www.w3schools.com/html/mov_bbb.mp4",
+                title: "Kỷ Niệm Demo",
+                desc: "Chạm nhẹ vào ảnh để xem điều bất ngờ...", 
+                msgAfter: "Chúc mừng! Kỷ niệm này thật tuyệt vời đúng không?" 
+            },
+            "love": {
+                img: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=1000",
+                video: "https://www.w3schools.com/html/movie.mp4",
+                title: "Rung động đầu tiên",
+                desc: "Có một bí mật nằm sau bức ảnh này...",
+                msgAfter: "Đó chính là nụ cười của em ngày hôm ấy.Đó chính là nụ cười của em ngày hôm ấy.Đó chính là nụ cười của em ngày hôm ấy."
+            }
+        };
+
+        // --- Loading ---
+        let count = 0;
+        const interval = setInterval(() => {
+            count++;
+            document.getElementById('progress').innerText = count + '%';
+            if (count === 100) {
+                clearInterval(interval);
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => document.getElementById('loader').style.display = 'none', 800);
+            }
+        }, 20);
+
+        // --- Logic Xử lý ---
+        let currentVideoElement = null;
+        let currentMessageAfter = "";
+
+        function checkMemory() {
+            // FIX 1: Ép tắt bàn phím ngay lập tức
+            document.getElementById('secretCode').blur();
+
+            const code = document.getElementById('secretCode').value.trim().toLowerCase();
+            const modal = document.getElementById('resultModal');
+            const mediaContainer = document.getElementById('mediaContainer');
+            
+            if (dataMemories[code]) {
+                const data = dataMemories[code];
+                
+                document.getElementById('memoryTitle').innerText = data.title;
+                document.getElementById('memoryDesc').innerText = data.desc;
+                
+                currentMessageAfter = data.msgAfter;
+
+                mediaContainer.classList.remove('playing');
+                mediaContainer.style.backgroundImage = `url('${data.img}')`;
+
+                mediaContainer.innerHTML = `
+                    <img src="${data.img}" alt="Memory Image">
+                    <video id="activeVideo" src="${data.video}" loop playsinline controls></video>
+                `;
+                
+                currentVideoElement = document.getElementById('activeVideo');
+                
+                // Delay nhỏ xíu để bàn phím tắt hẳn rồi mới hiện popup
+                setTimeout(() => {
+                    modal.classList.add('active');
+                }, 300);
+
+            } else {
+                alert('Mật mã không chính xác!');
+                document.getElementById('secretCode').value = '';
+                // Nếu sai thì focus lại để nhập tiếp
+                document.getElementById('secretCode').focus();
+            }
+        }
+
+        function revealVideo() {
+            const container = document.getElementById('mediaContainer');
+            if (!container.classList.contains('playing')) {
+                container.classList.add('playing');
+                if (currentVideoElement) {
+                    currentVideoElement.play();
+                }
+                
+                if (currentMessageAfter) {
+                    document.getElementById('memoryDesc').innerText = currentMessageAfter;
+                }
+            }
+        }
+
+        function closeMemory() {
+            const modal = document.getElementById('resultModal');
+            modal.classList.remove('active');
+            if (currentVideoElement) {
+                currentVideoElement.pause();
+                currentVideoElement.currentTime = 0;
+            }
+            document.getElementById('secretCode').value = '';
+        }
+
+        document.getElementById('secretCode').addEventListener("keypress", function(event) {
+            if (event.key === "Enter") checkMemory();
+        });
+    </script>
+</body>
+</html>
